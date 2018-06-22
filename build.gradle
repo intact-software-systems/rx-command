@@ -1,0 +1,88 @@
+apply plugin: "java"
+
+project.ext {
+    rxEngineVersion = "1.0"
+    junit5Version = "5.02"
+    logbackVersion = "1.2.3"
+}
+
+buildscript {
+    repositories {
+        maven { url 'http://repo.spring.io/plugins-release' }
+    }
+    dependencies {
+        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+    }
+}
+
+subprojects {
+    apply plugin: "java"
+    apply plugin: "propdeps"
+    apply plugin: "propdeps-idea"
+
+    dependencies {
+        compile "ch.qos.logback:logback-classic:${logbackVersion}"
+        compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+//        compile "org.junit.jupiter:junit-jupiter-api:${junit5Version}"
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.2.0'
+    }
+
+    group = "com.intact.$rootProject.name"
+    version = "$rxEngineVersion"
+
+    sourceCompatibility = "1.10"
+    targetCompatibility = "1.10"
+
+    [compileJava, compileTestJava]*.options*.encoding = "UTF-8"
+
+    compileJava.dependsOn(processResources)
+
+    afterEvaluate {
+        repositories {
+            jcenter()
+        }
+
+        compileJava {
+            inputs.property("moduleName", moduleName)
+            doFirst {
+                options.compilerArgs = [
+                        '--module-path', classpath.asPath,
+                ]
+                classpath = files()
+            }
+        }
+
+        compileTestJava {
+            inputs.property("moduleName", moduleName)
+            doFirst {
+                options.compilerArgs = [
+                        '--module-path', classpath.asPath,
+                        '--add-modules', 'org.junit.jupiter.api',
+                        '--add-reads', "$moduleName=org.junit.jupiter.api",
+                        '--patch-module', "$moduleName=" + files(sourceSets.test.java.srcDirs).asPath,
+                ]
+                classpath = files()
+            }
+        }
+
+        test {
+            inputs.property("moduleName", moduleName)
+            doFirst {
+                jvmArgs = [
+                        '--module-path', classpath.asPath,
+                        '--add-modules', 'ALL-MODULE-PATH',
+                        '--add-reads', "$moduleName=org.junit.jupiter.api",
+                        '--patch-module', "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
+                ]
+                classpath = files()
+            }
+        }
+
+        jar {
+            inputs.property("moduleName", moduleName)
+            manifest {
+                attributes('Automatic-Module-Name': moduleName)
+            }
+        }
+    }
+}
