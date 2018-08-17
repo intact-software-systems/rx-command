@@ -17,16 +17,13 @@ public class AtomicSupplierWithInitial<T> {
     }
 
     public boolean isInitial() {
-        //noinspection ObjectEquality
-        return reference.get() == initial;
+        return reference.get() == initial || (reference.get() != null && reference.get().equals(initial));
     }
 
     public T computeIfInitial() {
-        //noinspection ObjectEquality
-        if (reference.get() == initial) {
-            reference.set(supplier.get());
-        }
-        return reference.get();
+        return isInitial()
+                ? reference.updateAndGet(current -> current == null ? supplier.get() : current)
+                : reference.get();
     }
 
     public T immutableGet() {
