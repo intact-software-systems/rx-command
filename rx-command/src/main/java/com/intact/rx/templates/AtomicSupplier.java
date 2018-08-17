@@ -19,9 +19,9 @@ public class AtomicSupplier<T> {
     }
 
     public T get() {
-        return reference.get() == null
-                ? reference.updateAndGet(current -> current == null ? supplier.get() : current)
-                : reference.get();
+        return reference.get() != null
+                ? reference.get()
+                : reference.updateAndGet(current -> current == null ? supplier.get() : current);
     }
 
     public T clear() {
