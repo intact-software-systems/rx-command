@@ -8,3 +8,5 @@ gradlew.bat
 */build
 venv/
 out/
+target/
+rx-command/target
